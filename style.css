@@ -745,6 +745,10 @@ textarea {
   color: #ffffff;
 }
 
+[data-theme="light"] .team-player.keeper .team-player-name {
+  color: var(--text);
+}
+
 .team-footer {
   margin-top: 12px;
   padding: 14px;
