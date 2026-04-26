@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tira Time</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="hero">
+      <div>
+        <p class="eyebrow">Futebol amador</p>
+        <h1>Tira Time</h1>
+        <p>Monte times equilibrados em poucos segundos</p>
+      </div>
+      <button id="themeToggle" class="icon-button" type="button" aria-label="Alternar tema" title="Alternar tema">☀</button>
+    </header>
+
+    <main>
+      <section class="panel">
+        <div class="section-heading">
+          <div>
+            <h2>Cadastro</h2>
+            <p>Adicione jogadores, notas e goleiros.</p>
+          </div>
+        </div>
+
+        <form id="playerForm" class="player-form">
+          <input id="playerName" type="text" maxlength="40" placeholder="Nome do jogador" autocomplete="off" required>
+
+          <div class="rating-row">
+            <span>Nota</span>
+            <div id="ratingInput" class="stars" role="radiogroup" aria-label="Nota do jogador"></div>
+          </div>
+
+          <label class="keeper-toggle">
+            <input id="isGoalkeeper" type="checkbox">
+            <span>Goleiro</span>
+          </label>
+
+          <div class="form-actions">
+            <button id="submitPlayer" class="button primary" type="submit">Adicionar jogador</button>
+            <button id="cancelEdit" class="button subtle hidden" type="button">Cancelar edição</button>
+          </div>
+        </form>
+
+        <details class="quick-add">
+          <summary>Modo rápido: colar vários nomes</summary>
+          <textarea id="bulkNames" rows="6" placeholder="Um nome por linha"></textarea>
+          <div class="inline-actions">
+            <button id="bulkAdd" class="button secondary" type="button">Adicionar com nota 3</button>
+          </div>
+        </details>
+      </section>
+
+      <section class="panel">
+        <div class="section-heading">
+          <div>
+            <h2>Jogadores</h2>
+            <p><span id="playerCount">0</span> cadastrados · soma <span id="ratingSum">0</span> · <span id="keeperCount">0</span> goleiros</p>
+          </div>
+        </div>
+
+        <div class="toolbar">
+          <input id="searchPlayer" type="search" placeholder="Buscar jogador">
+          <select id="sortPlayers" aria-label="Ordenar jogadores">
+            <option value="created">Ordem de cadastro</option>
+            <option value="name">Ordenar por nome</option>
+            <option value="rating">Ordenar por nota</option>
+            <option value="goalkeeper">Ordenar por goleiro</option>
+          </select>
+        </div>
+
+        <div id="playersList" class="players-list empty-state">Nenhum jogador cadastrado.</div>
+
+        <div class="button-grid">
+          <button id="savePlayers" class="button secondary" type="button">Salvar lista</button>
+          <button id="loadPlayers" class="button secondary" type="button">Carregar lista</button>
+          <button id="exportPlayers" class="button secondary" type="button">Exportar JSON</button>
+          <button id="openImport" class="button secondary" type="button">Importar JSON</button>
+          <button id="clearPlayers" class="button danger" type="button">Limpar tudo</button>
+        </div>
+
+        <div id="jsonBox" class="json-box hidden">
+          <textarea id="jsonData" rows="7" placeholder="Cole ou copie o JSON dos jogadores"></textarea>
+          <div class="inline-actions">
+            <button id="importPlayers" class="button primary" type="button">Importar</button>
+            <button id="closeJson" class="button subtle" type="button">Fechar</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="section-heading">
+          <div>
+            <h2>Sorteio</h2>
+            <p>Configure os times e gere uma nova divisão quando quiser.</p>
+          </div>
+        </div>
+
+        <div class="settings-grid">
+          <label>
+            Número de times
+            <input id="teamCount" type="number" min="2" max="10" value="2">
+          </label>
+          <label>
+            Jogadores por time
+            <input id="playersPerTeam" type="number" min="1" max="20" value="5">
+          </label>
+          <label class="check-line">
+            <input id="allowReserves" type="checkbox" checked>
+            <span>Permitir reservas/sobrando</span>
+          </label>
+          <label class="check-line">
+            <input id="goalkeepersFirst" type="checkbox" checked>
+            <span>Distribuir goleiros primeiro</span>
+          </label>
+        </div>
+
+        <button id="generateTeams" class="button primary full" type="button">Sortear times</button>
+        <p id="drawHint" class="hint"></p>
+      </section>
+
+      <section id="teamsSection" class="teams-section hidden">
+        <div class="section-heading">
+          <div>
+            <h2>Times sorteados</h2>
+            <p id="balanceLabel">Pronto para sortear.</p>
+          </div>
+          <div class="result-actions">
+            <button id="copyTeams" class="button secondary" type="button">Copiar</button>
+            <button id="shareTeams" class="button secondary" type="button">WhatsApp</button>
+          </div>
+        </div>
+        <div id="teamsList" class="teams-list"></div>
+        <div id="reservesList" class="reserves-list"></div>
+      </section>
+    </main>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script src="script.js"></script>
+</body>
+</html>
