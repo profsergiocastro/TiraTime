@@ -1,4 +1,4 @@
-const STORAGE_KEY = "tira-time-players";
+﻿const STORAGE_KEY = "tira-time-players";
 const SAVED_KEY = "tira-time-saved-list";
 const THEME_KEY = "tira-time-theme";
 const SETTINGS_KEY = "tira-time-settings";
@@ -34,7 +34,7 @@ function bindElements() {
     "imageTeamSelect", "teamCanvas", "downloadImage", "shareImage",
     "cancelImageDialog", "themeToggle", "toast", "newDrawTop", "newDrawInline",
     "summaryPlayers", "summaryKeepers", "summaryRating", "summaryAverage",
-    "drawPreviewText", "teamsMirror"
+    "drawPreviewText"
   ].forEach((id) => {
     el[id] = document.getElementById(id);
   });
@@ -458,7 +458,6 @@ function renderTeams(result) {
     el.teamsList.innerHTML = "";
     el.reservesList.innerHTML = "";
     el.drawPreviewText.textContent = "Configure o sorteio e veja os times aqui.";
-    el.teamsMirror.textContent = "Sorteie os times na aba “Sortear Times”.";
     return;
   }
 
@@ -479,7 +478,7 @@ function renderTeams(result) {
       <div class="team-body">
         <div class="team-stats">
           <span>Soma: ${team.total}</span>
-          <span>Média: ${average.replace(".", ",")}</span>
+          <span>M&eacute;dia: ${average.replace(".", ",")}</span>
           <span class="readonly-stars">${renderStars(Math.round(Number(average)))}</span>
         </div>
         ${team.players.map((player, index) => `
@@ -509,10 +508,6 @@ function renderTeams(result) {
     `;
   }
 
-  el.teamsMirror.innerHTML = `
-    <div class="teams-list">${el.teamsList.innerHTML}</div>
-    ${el.reservesList.innerHTML ? `<div class="reserves-list">${el.reservesList.innerHTML}</div>` : ""}
-  `;
 }
 
 function renderRatingInput() {
@@ -581,26 +576,28 @@ function openShareImageModal(team) {
 function drawSelectedTeamImage() {
   if (!lastTeams) return;
   const team = lastTeams.teams[Number(el.imageTeamSelect.value) || 0];
-  renderTeamImageCanvas(team);
+  renderTeamImage(team);
 }
 
-function renderTeamImageCanvas(team) {
+function renderTeamImage(team) {
   const canvas = el.teamCanvas;
   const ctx = canvas.getContext("2d");
   const width = canvas.width;
   const height = canvas.height;
-  const court = { x: 44, y: 250, w: width - 88, h: height - 330 };
+  const court = { x: 44, y: 260, w: width - 88, h: height - 330 };
   const average = team.players.length ? (team.total / team.players.length).toFixed(1) : "0.0";
+  const orderedPlayers = orderPlayersForImage(team.players);
 
   ctx.clearRect(0, 0, width, height);
   drawImageBackground(ctx, width, height);
   drawImageHeader(ctx, team, average);
-  drawFutsalCourt(ctx, court);
+  drawCourt(ctx, court);
 
-  const positions = getFutsalPositions(team.players, court);
-  const markerRadius = getMarkerRadius(team.players.length);
-  team.players.forEach((player, index) => {
-    drawPlayerMarker(ctx, player, positions[index], index + 1, markerRadius);
+  const positions = getFutsalPositions(orderedPlayers.length, court);
+  const markerRadius = getMarkerRadius(orderedPlayers.length);
+  orderedPlayers.forEach((player, index) => {
+    drawPlayerCircle(ctx, player, positions[index].x, positions[index].y, index + 1, markerRadius);
+    drawPlayerName(ctx, player, positions[index].x, positions[index].y + markerRadius + 20, markerRadius);
   });
 
   drawImageFooter(ctx, width, height);
@@ -623,37 +620,54 @@ function drawImageBackground(ctx, width, height) {
 }
 
 function drawImageHeader(ctx, team, average) {
-  ctx.fillStyle = "#ffffff";
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.font = "900 52px Arial";
-  ctx.fillText(team.name.toUpperCase(), 450, 86);
-
-  ctx.font = "700 25px Arial";
-  ctx.fillText(`Soma: ${team.total} | Média: ${average}`, 450, 135);
-
-  ctx.fillStyle = "#f2b21b";
-  ctx.font = "36px Arial";
-  ctx.fillText(renderStars(Math.round(average)), 450, 180);
-
   ctx.fillStyle = "#10261b";
   ctx.strokeStyle = "#78e26e";
   ctx.lineWidth = 5;
   ctx.beginPath();
-  ctx.roundRect(54, 48, 120, 120, 12);
+  ctx.roundRect(56, 48, 98, 116, 12);
   ctx.fill();
   ctx.stroke();
 
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
   ctx.fillStyle = "#ffffff";
-  ctx.font = "900 22px Arial";
-  ctx.fillText("TIME", 114, 88);
-  ctx.fillText("EQUILIBRADO", 114, 115);
-  ctx.font = "44px Arial";
-  ctx.fillText("⚽", 114, 146);
+  ctx.font = "900 17px Arial";
+  ctx.fillText("TIME", 105, 82);
+  ctx.font = "900 14px Arial";
+  ctx.fillText("EQUILIBRADO", 105, 104);
+  ctx.font = "40px Arial";
+  ctx.fillText("\u26bd", 105, 137);
+
+  ctx.fillStyle = "#125da8";
+  ctx.beginPath();
+  ctx.roundRect(296, 48, 308, 76, 12);
+  ctx.fill();
+
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "900 44px Arial";
+  ctx.fillText(team.name.toUpperCase(), 450, 86);
+  ctx.font = "700 25px Arial";
+  ctx.fillText(`Soma: ${team.total} | M\u00e9dia: ${average.replace(".", ",")}`, 450, 152);
+  ctx.fillStyle = "#f2b21b";
+  ctx.font = "36px Arial";
+  ctx.fillText(renderStars(Math.round(Number(average))), 450, 195);
+  ctx.font = "58px Arial";
+  ctx.fillText("\u26bd", 780, 94);
+  return;
 }
 
-function drawFutsalCourt(ctx, court) {
+function drawCourt(ctx, court) {
   ctx.save();
+  const wood = ctx.createLinearGradient(court.x - 22, court.y - 22, court.x + court.w + 22, court.y + court.h + 22);
+  wood.addColorStop(0, "#7b4b22");
+  wood.addColorStop(0.45, "#c98a45");
+  wood.addColorStop(1, "#6d3f1e");
+  ctx.fillStyle = wood;
+  ctx.fillRect(court.x - 22, court.y - 22, court.w + 44, court.h + 44);
+  ctx.strokeStyle = "rgba(0,0,0,0.5)";
+  ctx.lineWidth = 4;
+  ctx.strokeRect(court.x - 18, court.y - 18, court.w + 36, court.h + 36);
+
   const courtGradient = ctx.createLinearGradient(court.x, court.y, court.x, court.y + court.h);
   courtGradient.addColorStop(0, "#174d82");
   courtGradient.addColorStop(0.5, "#1d609a");
@@ -695,63 +709,51 @@ function drawFutsalCourt(ctx, court) {
   ctx.restore();
 }
 
-function getFutsalPositions(teamPlayers, court) {
-  const keepers = teamPlayers.filter((player) => player.isGoalkeeper);
-  const fieldPlayers = teamPlayers.filter((player) => !player.isGoalkeeper);
-  const positionsById = new Map();
-
-  keepers.forEach((player, index) => {
-    const offset = (index - (keepers.length - 1) / 2) * 82;
-    positionsById.set(player.id, {
-      x: court.x + court.w / 2 + offset,
-      y: court.y + 96 + Math.floor(index / 3) * 70
-    });
-  });
-
-  const base = getBaseFutsalSpots(fieldPlayers.length);
-
-  fieldPlayers.forEach((player, index) => {
-    if (index < base.length) {
-      positionsById.set(player.id, {
-        x: court.x + court.w * base[index].x,
-        y: court.y + court.h * base[index].y
-      });
-      return;
-    }
-
-    const extraIndex = index - base.length;
-    const columns = fieldPlayers.length > 9 ? 4 : 3;
-    const col = extraIndex % columns;
-    const row = Math.floor(extraIndex / columns);
-    positionsById.set(player.id, {
-      x: court.x + court.w * (0.18 + col * (0.64 / Math.max(1, columns - 1))),
-      y: court.y + court.h * Math.min(0.86, 0.68 + row * 0.08)
-    });
-  });
-
-  return teamPlayers.map((player) => positionsById.get(player.id));
-}
-
-function getBaseFutsalSpots(playerCount) {
+function getFutsalPositions(playerCount, court) {
+  court = court || { x: 44, y: 260, w: 812, h: 870 };
   const spots = [
-    { x: 0.5, y: 0.34 },
-    { x: 0.22, y: 0.43 },
-    { x: 0.78, y: 0.43 },
-    { x: 0.5, y: 0.58 }
+    { x: 0.5, y: 0.88 },
+    { x: 0.22, y: 0.58 },
+    { x: 0.78, y: 0.58 },
+    { x: 0.5, y: 0.48 },
+    { x: 0.5, y: 0.25 },
+    { x: 0.28, y: 0.38 },
+    { x: 0.72, y: 0.38 },
+    { x: 0.28, y: 0.73 },
+    { x: 0.72, y: 0.73 },
+    { x: 0.5, y: 0.68 }
   ];
-  if (playerCount <= 1) return [spots[0]];
-  if (playerCount === 2) return [spots[0], spots[3]];
-  if (playerCount === 3) return [spots[0], spots[1], spots[2]];
-  return spots;
+
+  const selected = spots.slice(0, Math.min(playerCount, spots.length));
+  for (let index = spots.length; index < playerCount; index += 1) {
+    const extra = index - spots.length;
+    const col = extra % 4;
+    const row = Math.floor(extra / 4);
+    selected.push({
+      x: 0.18 + col * 0.21,
+      y: Math.min(0.82, 0.32 + row * 0.12)
+    });
+  }
+
+  return selected.map((spot) => ({
+    x: court.x + court.w * spot.x,
+    y: court.y + court.h * spot.y
+  }));
 }
 
 function getMarkerRadius(playerCount) {
-  if (playerCount >= 10) return 34;
-  if (playerCount >= 7) return 40;
-  return 48;
+  if (playerCount >= 11) return 38;
+  if (playerCount >= 8) return 44;
+  return 56;
 }
 
-function drawPlayerMarker(ctx, player, position, number, radius = 48) {
+function orderPlayersForImage(teamPlayers) {
+  const keepers = teamPlayers.filter((player) => player.isGoalkeeper);
+  const fieldPlayers = teamPlayers.filter((player) => !player.isGoalkeeper);
+  return [...keepers, ...fieldPlayers];
+}
+
+function drawPlayerCircle(ctx, player, x, y, number, radius = 56) {
   ctx.save();
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
@@ -759,33 +761,44 @@ function drawPlayerMarker(ctx, player, position, number, radius = 48) {
   ctx.shadowBlur = 10;
   ctx.shadowOffsetY = 5;
 
-  ctx.fillStyle = player.isGoalkeeper ? "#ffd166" : "#ffffff";
-  ctx.strokeStyle = player.isGoalkeeper ? "#116134" : "#1b2d43";
+  ctx.fillStyle = "#ffffff";
+  ctx.strokeStyle = player.isGoalkeeper ? "#14795a" : "#1b2d43";
   ctx.lineWidth = Math.max(3, radius * 0.1);
   ctx.beginPath();
-  ctx.arc(position.x, position.y, radius, 0, Math.PI * 2);
+  ctx.arc(x, y, radius, 0, Math.PI * 2);
   ctx.fill();
   ctx.stroke();
 
   ctx.shadowColor = "transparent";
   ctx.fillStyle = "#101715";
-  ctx.font = `900 ${Math.max(21, radius * 0.6)}px Arial`;
-  ctx.fillText(number, position.x, position.y - radius * 0.2);
+  ctx.font = `900 ${Math.max(30, radius * 0.82)}px Arial`;
+  ctx.fillText(number, x, y + 2);
+  ctx.restore();
+}
 
-  ctx.font = `900 ${Math.max(10, radius * 0.27)}px Arial`;
-  wrapCanvasName(ctx, player.name, position.x, position.y + radius * 0.27, radius * 1.55);
-
+function drawPlayerName(ctx, player, x, y, radius = 56) {
+  ctx.save();
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  const name = truncateText(player.name, radius < 45 ? 14 : 18);
+  ctx.font = `900 ${radius < 45 ? 18 : 21}px Arial`;
+  const labelWidth = Math.min(250, Math.max(92, ctx.measureText(name).width + 24));
+  ctx.fillStyle = "rgba(0,0,0,0.82)";
+  ctx.beginPath();
+  ctx.roundRect(x - labelWidth / 2, y - 17, labelWidth, 34, 8);
+  ctx.fill();
+  ctx.fillStyle = "#ffffff";
+  ctx.fillText(name, x, y);
   if (player.isGoalkeeper) {
     ctx.fillStyle = "#14795a";
-    const labelY = position.y + radius + 15;
+    const labelY = y + 35;
     ctx.beginPath();
-    ctx.roundRect(position.x - 30, labelY - 14, 60, 28, 8);
+    ctx.roundRect(x - 30, labelY - 14, 60, 28, 8);
     ctx.fill();
     ctx.fillStyle = "#ffffff";
     ctx.font = "900 16px Arial";
-    ctx.fillText("GOL", position.x, labelY);
+    ctx.fillText("GOL", x, labelY);
   }
-
   ctx.restore();
 }
 
@@ -819,11 +832,13 @@ function drawImageFooter(ctx, width, height) {
   ctx.fillStyle = "#ffffff";
   ctx.font = "700 24px Arial";
   ctx.textAlign = "left";
-  ctx.fillText("Tira Time - futebol com equilíbrio", 46, height - 36);
+  ctx.fillText("Time Equilibrado - futebol com equil\u00edbrio", 46, height - 36);
 
   ctx.font = "56px Arial";
   ctx.textAlign = "right";
-  ctx.fillText("⚽", width - 42, height - 42);
+  ctx.fillText("\u26bd", width - 42, height - 42);
+  return;
+
 }
 
 function downloadTeamImage() {
@@ -1028,3 +1043,5 @@ function showToast(message) {
   clearTimeout(showToast.timeout);
   showToast.timeout = setTimeout(() => el.toast.classList.remove("show"), 2800);
 }
+
+
