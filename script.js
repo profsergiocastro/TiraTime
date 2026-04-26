@@ -789,13 +789,13 @@ function drawPlayerName(ctx, player, x, y, radius = 56) {
   ctx.fillStyle = "#ffffff";
   ctx.fillText(name, x, y);
   if (player.isGoalkeeper) {
-    ctx.fillStyle = "#14795a";
-    const labelY = y + 35;
+    ctx.fillStyle = "#22b63c";
+    const labelY = y + 39;
     ctx.beginPath();
-    ctx.roundRect(x - 30, labelY - 14, 60, 28, 8);
+    ctx.roundRect(x - 38, labelY - 18, 76, 36, 9);
     ctx.fill();
     ctx.fillStyle = "#07100e";
-    ctx.font = "900 16px Arial";
+    ctx.font = "900 21px Arial";
     ctx.fillText("GOL", x, labelY);
   }
   ctx.restore();

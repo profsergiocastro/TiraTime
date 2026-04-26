@@ -19,13 +19,13 @@
 
 [data-theme="light"] {
   color-scheme: light;
-  --bg: #eef5f0;
+  --bg: #f4faf6;
   --surface: rgba(255, 255, 255, 0.94);
   --surface-strong: rgba(255, 255, 255, 0.98);
-  --surface-soft: rgba(10, 49, 32, 0.07);
+  --surface-soft: #eef6f1;
   --text: #102019;
-  --muted: #455b52;
-  --line: rgba(13, 61, 38, 0.18);
+  --muted: #4f655d;
+  --line: rgba(13, 61, 38, 0.2);
   --primary: #157c26;
   --primary-strong: #0f651d;
   --secondary: #135da5;
@@ -81,8 +81,8 @@ body::after {
 
 [data-theme="light"] body {
   background:
-    linear-gradient(180deg, rgba(242, 249, 245, 0.72), rgba(242, 249, 245, 0.94) 44%, rgba(225, 242, 231, 0.98)),
-    repeating-linear-gradient(90deg, rgba(38, 132, 55, 0.16) 0 110px, rgba(28, 98, 47, 0.1) 110px 220px),
+    linear-gradient(180deg, rgba(248, 252, 249, 0.94), rgba(243, 250, 245, 0.98)),
+    repeating-linear-gradient(90deg, rgba(38, 132, 55, 0.08) 0 110px, rgba(28, 98, 47, 0.04) 110px 220px),
     var(--bg);
 }
 
@@ -99,6 +99,49 @@ body::after {
 [data-theme="light"] .stadium-hero,
 [data-theme="light"] .top-tabs {
   background: linear-gradient(180deg, rgba(19, 39, 32, 0.92), rgba(8, 26, 20, 0.92));
+}
+
+[data-theme="light"] .panel,
+[data-theme="light"] .summary-card,
+[data-theme="light"] .image-dialog {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(244, 250, 246, 0.96));
+  border-color: rgba(13, 61, 38, 0.18);
+}
+
+[data-theme="light"] .team-card {
+  background: linear-gradient(180deg, #ffffff, #edf7f1);
+}
+
+[data-theme="light"] input,
+[data-theme="light"] select,
+[data-theme="light"] textarea,
+[data-theme="light"] .number-row input {
+  background: #ffffff;
+  color: var(--text);
+}
+
+[data-theme="light"] .rating-row,
+[data-theme="light"] .keeper-toggle,
+[data-theme="light"] .player-card,
+[data-theme="light"] .reserve-card,
+[data-theme="light"] .subtle,
+[data-theme="light"] .step-button,
+[data-theme="light"] .number-row {
+  background: #edf6f1;
+  color: var(--text);
+  border-color: rgba(13, 61, 38, 0.16);
+}
+
+[data-theme="light"] .section-heading h2,
+[data-theme="light"] .team-stats,
+[data-theme="light"] .team-player,
+[data-theme="light"] .summary-card strong {
+  color: var(--text);
+}
+
+[data-theme="light"] .team-footer,
+[data-theme="light"] .balance-label {
+  color: #ffffff;
 }
 
 button,
