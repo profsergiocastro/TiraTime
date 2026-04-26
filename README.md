@@ -1,4 +1,4 @@
-# Tira Time
+# Time Equilibrado
 
 Aplicação web estática para cadastrar jogadores de futebol e sortear times equilibrados de forma rápida, visual e responsiva.
 
@@ -13,6 +13,7 @@ Aplicação web estática para cadastrar jogadores de futebol e sortear times eq
 - Cards de times com jogadores, goleiros destacados, soma e média das notas.
 - Cópia do resultado em texto.
 - Compartilhamento de cada time como imagem em uma quadra de futsal.
+- Interface escura inspirada em estádio, com abas para jogadores, sorteio, times, configurações e sobre.
 - Tema claro/escuro.
 - Persistência em `localStorage`.
 - Exportação e importação de jogadores em JSON.

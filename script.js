@@ -32,10 +32,16 @@ function bindElements() {
     "drawHint", "teamsSection", "teamsList", "reservesList", "balanceLabel",
     "copyTeams", "openImageShare", "imageDialog", "closeImageDialog",
     "imageTeamSelect", "teamCanvas", "downloadImage", "shareImage",
-    "themeToggle", "toast"
+    "cancelImageDialog", "themeToggle", "toast", "newDrawTop", "newDrawInline",
+    "summaryPlayers", "summaryKeepers", "summaryRating", "summaryAverage",
+    "drawPreviewText", "teamsMirror"
   ].forEach((id) => {
     el[id] = document.getElementById(id);
   });
+
+  el.tabButtons = [...document.querySelectorAll("[data-tab]")];
+  el.tabPanels = [...document.querySelectorAll("[data-tab-panel]")];
+  el.stepButtons = [...document.querySelectorAll("[data-step-target]")];
 }
 
 function bindEvents() {
@@ -52,13 +58,24 @@ function bindEvents() {
   el.importPlayers.addEventListener("click", importPlayers);
   el.clearPlayers.addEventListener("click", clearPlayers);
   el.generateTeams.addEventListener("click", generateTeams);
+  el.newDrawTop.addEventListener("click", generateTeams);
+  el.newDrawInline.addEventListener("click", generateTeams);
   el.copyTeams.addEventListener("click", copyTeams);
-  el.openImageShare.addEventListener("click", openImageDialog);
+  el.openImageShare.addEventListener("click", () => openShareImageModal());
   el.closeImageDialog.addEventListener("click", () => el.imageDialog.close());
+  el.cancelImageDialog.addEventListener("click", () => el.imageDialog.close());
   el.imageTeamSelect.addEventListener("change", drawSelectedTeamImage);
   el.downloadImage.addEventListener("click", downloadTeamImage);
   el.shareImage.addEventListener("click", shareTeamImage);
   el.themeToggle.addEventListener("click", toggleTheme);
+
+  el.tabButtons.forEach((button) => {
+    button.addEventListener("click", () => activateTab(button.dataset.tab));
+  });
+
+  el.stepButtons.forEach((button) => {
+    button.addEventListener("click", () => stepNumberInput(button.dataset.stepTarget, Number(button.dataset.step)));
+  });
 
   [el.teamCount, el.playersPerTeam, el.allowReserves, el.goalkeepersFirst].forEach((field) => {
     field.addEventListener("change", () => {
@@ -67,6 +84,27 @@ function bindEvents() {
     });
     field.addEventListener("input", updateDrawHint);
   });
+}
+
+function activateTab(tabName) {
+  el.tabButtons.forEach((button) => {
+    button.classList.toggle("active", button.dataset.tab === tabName);
+  });
+  el.tabPanels.forEach((panel) => {
+    panel.classList.toggle("active", panel.dataset.tabPanel === tabName);
+  });
+  document.body.dataset.activeTab = tabName;
+}
+
+function stepNumberInput(inputId, step) {
+  const input = el[inputId];
+  if (!input) return;
+  const min = Number(input.min) || 0;
+  const max = Number(input.max) || 99;
+  const nextValue = Math.min(max, Math.max(min, Number(input.value || min) + step));
+  input.value = nextValue;
+  persistSettings();
+  updateDrawHint();
 }
 
 function addPlayer(event) {
@@ -289,6 +327,7 @@ function generateTeams() {
   lastTeams = result;
   persistSettings();
   renderTeams(result);
+  activateTab("draw");
   showToast("Times sorteados.");
 }
 
@@ -368,6 +407,7 @@ function renderPlayers() {
   el.playerCount.textContent = players.length;
   el.ratingSum.textContent = players.reduce((sum, player) => sum + normalizeRating(player.rating), 0);
   el.keeperCount.textContent = players.filter((player) => player.isGoalkeeper).length;
+  renderSummary();
 
   if (!sorted.length) {
     el.playersList.className = "players-list empty-state";
@@ -400,16 +440,31 @@ function renderPlayers() {
   });
 }
 
+function renderSummary() {
+  const total = players.length;
+  const keepers = players.filter((player) => player.isGoalkeeper).length;
+  const ratingTotal = players.reduce((sum, player) => sum + normalizeRating(player.rating), 0);
+  const average = total ? (ratingTotal / total).toFixed(1).replace(".", ",") : "0,0";
+
+  el.summaryPlayers.textContent = total;
+  el.summaryKeepers.textContent = keepers;
+  el.summaryRating.textContent = ratingTotal;
+  el.summaryAverage.textContent = `${average} ★`;
+}
+
 function renderTeams(result) {
   if (!result) {
     el.teamsSection.classList.add("hidden");
     el.teamsList.innerHTML = "";
     el.reservesList.innerHTML = "";
+    el.drawPreviewText.textContent = "Configure o sorteio e veja os times aqui.";
+    el.teamsMirror.textContent = "Sorteie os times na aba “Sortear Times”.";
     return;
   }
 
   el.teamsSection.classList.remove("hidden");
-  el.balanceLabel.textContent = `${result.balance} · diferença de ${result.diff} ponto(s)`;
+  el.drawPreviewText.textContent = "Resultado pronto para copiar ou compartilhar como imagem.";
+  el.balanceLabel.textContent = `🛡 ${result.balance}! Diferença de ${result.diff} ponto(s)`;
   el.teamsList.innerHTML = "";
   el.reservesList.innerHTML = "";
 
@@ -420,19 +475,26 @@ function renderTeams(result) {
     card.innerHTML = `
       <div class="team-header">
         <h3>${team.name}</h3>
-        <span class="badge">${team.total} pts</span>
       </div>
-      <div>
-        ${team.players.map((player) => `
+      <div class="team-body">
+        <div class="team-stats">
+          <span>Soma: ${team.total}</span>
+          <span>Média: ${average.replace(".", ",")}</span>
+          <span class="readonly-stars">${renderStars(Math.round(Number(average)))}</span>
+        </div>
+        ${team.players.map((player, index) => `
           <div class="team-player${player.isGoalkeeper ? " keeper" : ""}">
-            <span>${escapeHtml(player.name)} ${player.isGoalkeeper ? '<span class="badge">G</span>' : ""}</span>
+            <span class="team-player-name">
+              <span class="player-number">${index + 1}</span>
+              <span>${escapeHtml(player.name)}</span>
+              ${player.isGoalkeeper ? '<span class="badge">GOL</span>' : ""}
+            </span>
             <span class="readonly-stars">${renderStars(player.rating)}</span>
           </div>
         `).join("") || "<p class=\"hint\">Sem jogadores.</p>"}
-      </div>
-      <div class="team-footer">
-        <span>Soma: ${team.total}</span>
-        <span>Média: ${average}</span>
+        <div class="team-footer">
+          <span>${result.balance}</span>
+        </div>
       </div>
     `;
     el.teamsList.appendChild(card);
@@ -446,6 +508,11 @@ function renderTeams(result) {
       </div>
     `;
   }
+
+  el.teamsMirror.innerHTML = `
+    <div class="teams-list">${el.teamsList.innerHTML}</div>
+    ${el.reservesList.innerHTML ? `<div class="reserves-list">${el.reservesList.innerHTML}</div>` : ""}
+  `;
 }
 
 function renderRatingInput() {
@@ -485,7 +552,7 @@ function copyTeams() {
     .catch(() => showToast("Não foi possível copiar automaticamente."));
 }
 
-function openImageDialog() {
+function openShareImageModal(team) {
   if (!lastTeams) {
     showToast("Sorteie os times antes de gerar a imagem.");
     return;
@@ -504,16 +571,20 @@ function openImageDialog() {
   } else {
     el.imageDialog.setAttribute("open", "");
   }
+  if (team) {
+    const selectedIndex = lastTeams.teams.findIndex((item) => item.name === team.name);
+    if (selectedIndex >= 0) el.imageTeamSelect.value = selectedIndex;
+  }
   drawSelectedTeamImage();
 }
 
 function drawSelectedTeamImage() {
   if (!lastTeams) return;
   const team = lastTeams.teams[Number(el.imageTeamSelect.value) || 0];
-  drawTeamImage(team);
+  renderTeamImageCanvas(team);
 }
 
-function drawTeamImage(team) {
+function renderTeamImageCanvas(team) {
   const canvas = el.teamCanvas;
   const ctx = canvas.getContext("2d");
   const width = canvas.width;
@@ -524,11 +595,12 @@ function drawTeamImage(team) {
   ctx.clearRect(0, 0, width, height);
   drawImageBackground(ctx, width, height);
   drawImageHeader(ctx, team, average);
-  drawCourt(ctx, court);
+  drawFutsalCourt(ctx, court);
 
-  const positions = getCourtPositions(team.players, court);
+  const positions = getFutsalPositions(team.players, court);
+  const markerRadius = getMarkerRadius(team.players.length);
   team.players.forEach((player, index) => {
-    drawPlayerMarker(ctx, player, index + 1, positions[index]);
+    drawPlayerMarker(ctx, player, positions[index], index + 1, markerRadius);
   });
 
   drawImageFooter(ctx, width, height);
@@ -580,9 +652,13 @@ function drawImageHeader(ctx, team, average) {
   ctx.fillText("⚽", 114, 146);
 }
 
-function drawCourt(ctx, court) {
+function drawFutsalCourt(ctx, court) {
   ctx.save();
-  ctx.fillStyle = "#155c95";
+  const courtGradient = ctx.createLinearGradient(court.x, court.y, court.x, court.y + court.h);
+  courtGradient.addColorStop(0, "#174d82");
+  courtGradient.addColorStop(0.5, "#1d609a");
+  courtGradient.addColorStop(1, "#124574");
+  ctx.fillStyle = courtGradient;
   ctx.fillRect(court.x, court.y, court.w, court.h);
 
   for (let y = court.y; y < court.y + court.h; y += 62) {
@@ -619,25 +695,20 @@ function drawCourt(ctx, court) {
   ctx.restore();
 }
 
-function getCourtPositions(teamPlayers, court) {
+function getFutsalPositions(teamPlayers, court) {
   const keepers = teamPlayers.filter((player) => player.isGoalkeeper);
   const fieldPlayers = teamPlayers.filter((player) => !player.isGoalkeeper);
   const positionsById = new Map();
 
   keepers.forEach((player, index) => {
-    const offset = (index - (keepers.length - 1) / 2) * 78;
+    const offset = (index - (keepers.length - 1) / 2) * 82;
     positionsById.set(player.id, {
       x: court.x + court.w / 2 + offset,
-      y: court.y + 96 + Math.floor(index / 3) * 64
+      y: court.y + 96 + Math.floor(index / 3) * 70
     });
   });
 
-  const base = [
-    { x: 0.22, y: 0.43 },
-    { x: 0.78, y: 0.43 },
-    { x: 0.5, y: 0.34 },
-    { x: 0.5, y: 0.58 }
-  ];
+  const base = getBaseFutsalSpots(fieldPlayers.length);
 
   fieldPlayers.forEach((player, index) => {
     if (index < base.length) {
@@ -649,19 +720,38 @@ function getCourtPositions(teamPlayers, court) {
     }
 
     const extraIndex = index - base.length;
-    const columns = 3;
+    const columns = fieldPlayers.length > 9 ? 4 : 3;
     const col = extraIndex % columns;
     const row = Math.floor(extraIndex / columns);
     positionsById.set(player.id, {
-      x: court.x + court.w * (0.24 + col * 0.26),
-      y: court.y + court.h * (0.68 + row * 0.09)
+      x: court.x + court.w * (0.18 + col * (0.64 / Math.max(1, columns - 1))),
+      y: court.y + court.h * Math.min(0.86, 0.68 + row * 0.08)
     });
   });
 
   return teamPlayers.map((player) => positionsById.get(player.id));
 }
 
-function drawPlayerMarker(ctx, player, number, position) {
+function getBaseFutsalSpots(playerCount) {
+  const spots = [
+    { x: 0.5, y: 0.34 },
+    { x: 0.22, y: 0.43 },
+    { x: 0.78, y: 0.43 },
+    { x: 0.5, y: 0.58 }
+  ];
+  if (playerCount <= 1) return [spots[0]];
+  if (playerCount === 2) return [spots[0], spots[3]];
+  if (playerCount === 3) return [spots[0], spots[1], spots[2]];
+  return spots;
+}
+
+function getMarkerRadius(playerCount) {
+  if (playerCount >= 10) return 34;
+  if (playerCount >= 7) return 40;
+  return 48;
+}
+
+function drawPlayerMarker(ctx, player, position, number, radius = 48) {
   ctx.save();
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
@@ -671,23 +761,23 @@ function drawPlayerMarker(ctx, player, number, position) {
 
   ctx.fillStyle = player.isGoalkeeper ? "#ffd166" : "#ffffff";
   ctx.strokeStyle = player.isGoalkeeper ? "#116134" : "#1b2d43";
-  ctx.lineWidth = 5;
+  ctx.lineWidth = Math.max(3, radius * 0.1);
   ctx.beginPath();
-  ctx.arc(position.x, position.y, 48, 0, Math.PI * 2);
+  ctx.arc(position.x, position.y, radius, 0, Math.PI * 2);
   ctx.fill();
   ctx.stroke();
 
   ctx.shadowColor = "transparent";
   ctx.fillStyle = "#101715";
-  ctx.font = "900 29px Arial";
-  ctx.fillText(number, position.x, position.y - 10);
+  ctx.font = `900 ${Math.max(21, radius * 0.6)}px Arial`;
+  ctx.fillText(number, position.x, position.y - radius * 0.2);
 
-  ctx.font = "900 13px Arial";
-  wrapCanvasName(ctx, player.name, position.x, position.y + 13, 76);
+  ctx.font = `900 ${Math.max(10, radius * 0.27)}px Arial`;
+  wrapCanvasName(ctx, player.name, position.x, position.y + radius * 0.27, radius * 1.55);
 
   if (player.isGoalkeeper) {
     ctx.fillStyle = "#14795a";
-    const labelY = position.y + 63;
+    const labelY = position.y + radius + 15;
     ctx.beginPath();
     ctx.roundRect(position.x - 30, labelY - 14, 60, 28, 8);
     ctx.fill();
@@ -847,7 +937,7 @@ function toggleTheme() {
 }
 
 function loadTheme() {
-  const theme = localStorage.getItem(THEME_KEY) || "light";
+  const theme = localStorage.getItem(THEME_KEY) || "dark";
   document.documentElement.dataset.theme = theme;
   el.themeToggle.textContent = theme === "dark" ? "☾" : "☀";
 }
