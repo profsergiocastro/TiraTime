@@ -93,7 +93,7 @@ function addPlayer(event) {
     }
   } else {
     players.push({
-      id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random()),
+      id: createPlayerId(),
       name,
       rating,
       isGoalkeeper,
@@ -124,7 +124,7 @@ function addBulkPlayers() {
     const exists = players.some((player) => normalizeName(player.name).toLowerCase() === name.toLowerCase());
     if (!exists) {
       players.push({
-        id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random()),
+        id: createPlayerId(),
         name,
         rating: 3,
         isGoalkeeper: false,
@@ -571,13 +571,21 @@ function resetForm() {
 }
 
 function sanitizePlayer(player) {
+  const safePlayer = player && typeof player === "object" ? player : {};
   return {
-    id: player.id || (crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random())),
-    name: normalizeName(player.name || "Sem nome"),
-    rating: normalizeRating(player.rating),
-    isGoalkeeper: Boolean(player.isGoalkeeper),
-    createdAt: Number(player.createdAt) || Date.now()
+    id: safePlayer.id || createPlayerId(),
+    name: normalizeName(safePlayer.name || "Sem nome"),
+    rating: normalizeRating(safePlayer.rating),
+    isGoalkeeper: Boolean(safePlayer.isGoalkeeper),
+    createdAt: Number(safePlayer.createdAt) || Date.now()
   };
+}
+
+function createPlayerId() {
+  if (window.crypto && typeof window.crypto.randomUUID === "function") {
+    return window.crypto.randomUUID();
+  }
+  return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
 function normalizeName(name) {
