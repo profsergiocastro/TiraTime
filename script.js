@@ -600,7 +600,6 @@ function renderTeamImage(team) {
     drawPlayerName(ctx, player, positions[index].x, positions[index].y + markerRadius + 20, markerRadius);
   });
 
-  drawImageFooter(ctx, width, height);
 }
 
 function drawImageBackground(ctx, width, height) {
@@ -780,8 +779,8 @@ function drawPlayerName(ctx, player, x, y, radius = 56) {
   ctx.save();
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
-  const name = truncateText(player.name, radius < 45 ? 14 : 18);
-  ctx.font = `900 ${radius < 45 ? 18 : 21}px Arial`;
+  const name = truncateText(player.name, radius < 45 ? 16 : 20);
+  ctx.font = `900 ${radius < 45 ? 20 : 24}px Arial`;
   const labelWidth = Math.min(250, Math.max(92, ctx.measureText(name).width + 24));
   ctx.fillStyle = "rgba(0,0,0,0.82)";
   ctx.beginPath();
@@ -795,7 +794,7 @@ function drawPlayerName(ctx, player, x, y, radius = 56) {
     ctx.beginPath();
     ctx.roundRect(x - 30, labelY - 14, 60, 28, 8);
     ctx.fill();
-    ctx.fillStyle = "#ffffff";
+    ctx.fillStyle = "#07100e";
     ctx.font = "900 16px Arial";
     ctx.fillText("GOL", x, labelY);
   }
