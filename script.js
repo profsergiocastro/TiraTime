@@ -30,7 +30,9 @@ function bindElements() {
     "importPlayers", "closeJson", "clearPlayers", "teamCount",
     "playersPerTeam", "allowReserves", "goalkeepersFirst", "generateTeams",
     "drawHint", "teamsSection", "teamsList", "reservesList", "balanceLabel",
-    "copyTeams", "shareTeams", "themeToggle", "toast"
+    "copyTeams", "openImageShare", "imageDialog", "closeImageDialog",
+    "imageTeamSelect", "teamCanvas", "downloadImage", "shareImage",
+    "themeToggle", "toast"
   ].forEach((id) => {
     el[id] = document.getElementById(id);
   });
@@ -51,7 +53,11 @@ function bindEvents() {
   el.clearPlayers.addEventListener("click", clearPlayers);
   el.generateTeams.addEventListener("click", generateTeams);
   el.copyTeams.addEventListener("click", copyTeams);
-  el.shareTeams.addEventListener("click", shareTeams);
+  el.openImageShare.addEventListener("click", openImageDialog);
+  el.closeImageDialog.addEventListener("click", () => el.imageDialog.close());
+  el.imageTeamSelect.addEventListener("change", drawSelectedTeamImage);
+  el.downloadImage.addEventListener("click", downloadTeamImage);
+  el.shareImage.addEventListener("click", shareTeamImage);
   el.themeToggle.addEventListener("click", toggleTheme);
 
   [el.teamCount, el.playersPerTeam, el.allowReserves, el.goalkeepersFirst].forEach((field) => {
@@ -479,17 +485,302 @@ function copyTeams() {
     .catch(() => showToast("Não foi possível copiar automaticamente."));
 }
 
-function shareTeams() {
+function openImageDialog() {
   if (!lastTeams) {
-    showToast("Sorteie os times antes de compartilhar.");
+    showToast("Sorteie os times antes de gerar a imagem.");
     return;
   }
-  const text = formatTeamsText(lastTeams);
-  if (navigator.share) {
-    navigator.share({ title: "Tira Time", text }).catch(() => {});
-    return;
+
+  el.imageTeamSelect.innerHTML = "";
+  lastTeams.teams.forEach((team, index) => {
+    const option = document.createElement("option");
+    option.value = index;
+    option.textContent = team.name;
+    el.imageTeamSelect.appendChild(option);
+  });
+
+  if (typeof el.imageDialog.showModal === "function") {
+    el.imageDialog.showModal();
+  } else {
+    el.imageDialog.setAttribute("open", "");
   }
-  window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank", "noopener");
+  drawSelectedTeamImage();
+}
+
+function drawSelectedTeamImage() {
+  if (!lastTeams) return;
+  const team = lastTeams.teams[Number(el.imageTeamSelect.value) || 0];
+  drawTeamImage(team);
+}
+
+function drawTeamImage(team) {
+  const canvas = el.teamCanvas;
+  const ctx = canvas.getContext("2d");
+  const width = canvas.width;
+  const height = canvas.height;
+  const court = { x: 44, y: 250, w: width - 88, h: height - 330 };
+  const average = team.players.length ? (team.total / team.players.length).toFixed(1) : "0.0";
+
+  ctx.clearRect(0, 0, width, height);
+  drawImageBackground(ctx, width, height);
+  drawImageHeader(ctx, team, average);
+  drawCourt(ctx, court);
+
+  const positions = getCourtPositions(team.players, court);
+  team.players.forEach((player, index) => {
+    drawPlayerMarker(ctx, player, index + 1, positions[index]);
+  });
+
+  drawImageFooter(ctx, width, height);
+}
+
+function drawImageBackground(ctx, width, height) {
+  const bg = ctx.createLinearGradient(0, 0, 0, height);
+  bg.addColorStop(0, "#07110f");
+  bg.addColorStop(0.22, "#0d1815");
+  bg.addColorStop(1, "#10261b");
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, width, height);
+
+  for (let i = 0; i < 16; i += 1) {
+    ctx.fillStyle = `rgba(255,255,255,${i % 2 ? 0.08 : 0.14})`;
+    ctx.beginPath();
+    ctx.arc(80 + i * 52, 58 + (i % 3) * 14, 9, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+function drawImageHeader(ctx, team, average) {
+  ctx.fillStyle = "#ffffff";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.font = "900 52px Arial";
+  ctx.fillText(team.name.toUpperCase(), 450, 86);
+
+  ctx.font = "700 25px Arial";
+  ctx.fillText(`Soma: ${team.total} | Média: ${average}`, 450, 135);
+
+  ctx.fillStyle = "#f2b21b";
+  ctx.font = "36px Arial";
+  ctx.fillText(renderStars(Math.round(average)), 450, 180);
+
+  ctx.fillStyle = "#10261b";
+  ctx.strokeStyle = "#78e26e";
+  ctx.lineWidth = 5;
+  ctx.beginPath();
+  ctx.roundRect(54, 48, 120, 120, 12);
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "900 22px Arial";
+  ctx.fillText("TIME", 114, 88);
+  ctx.fillText("EQUILIBRADO", 114, 115);
+  ctx.font = "44px Arial";
+  ctx.fillText("⚽", 114, 146);
+}
+
+function drawCourt(ctx, court) {
+  ctx.save();
+  ctx.fillStyle = "#155c95";
+  ctx.fillRect(court.x, court.y, court.w, court.h);
+
+  for (let y = court.y; y < court.y + court.h; y += 62) {
+    ctx.fillStyle = y % 124 === 0 ? "rgba(255,255,255,0.035)" : "rgba(0,0,0,0.04)";
+    ctx.fillRect(court.x, y, court.w, 62);
+  }
+
+  ctx.strokeStyle = "rgba(255,255,255,0.88)";
+  ctx.lineWidth = 5;
+  ctx.strokeRect(court.x + 8, court.y + 8, court.w - 16, court.h - 16);
+
+  const centerY = court.y + court.h / 2;
+  ctx.beginPath();
+  ctx.moveTo(court.x + 8, centerY);
+  ctx.lineTo(court.x + court.w - 8, centerY);
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.arc(court.x + court.w / 2, centerY, 90, 0, Math.PI * 2);
+  ctx.stroke();
+
+  ctx.strokeRect(court.x + court.w * 0.32, court.y + 8, court.w * 0.36, 92);
+  ctx.strokeRect(court.x + court.w * 0.38, court.y + 8, court.w * 0.24, 44);
+  ctx.beginPath();
+  ctx.arc(court.x + court.w / 2, court.y + 118, 56, 0, Math.PI);
+  ctx.stroke();
+
+  ctx.strokeRect(court.x + court.w * 0.32, court.y + court.h - 100, court.w * 0.36, 92);
+  ctx.strokeRect(court.x + court.w * 0.38, court.y + court.h - 52, court.w * 0.24, 44);
+  ctx.beginPath();
+  ctx.arc(court.x + court.w / 2, court.y + court.h - 118, 56, Math.PI, 0);
+  ctx.stroke();
+
+  ctx.restore();
+}
+
+function getCourtPositions(teamPlayers, court) {
+  const keepers = teamPlayers.filter((player) => player.isGoalkeeper);
+  const fieldPlayers = teamPlayers.filter((player) => !player.isGoalkeeper);
+  const positionsById = new Map();
+
+  keepers.forEach((player, index) => {
+    const offset = (index - (keepers.length - 1) / 2) * 78;
+    positionsById.set(player.id, {
+      x: court.x + court.w / 2 + offset,
+      y: court.y + 96 + Math.floor(index / 3) * 64
+    });
+  });
+
+  const base = [
+    { x: 0.22, y: 0.43 },
+    { x: 0.78, y: 0.43 },
+    { x: 0.5, y: 0.34 },
+    { x: 0.5, y: 0.58 }
+  ];
+
+  fieldPlayers.forEach((player, index) => {
+    if (index < base.length) {
+      positionsById.set(player.id, {
+        x: court.x + court.w * base[index].x,
+        y: court.y + court.h * base[index].y
+      });
+      return;
+    }
+
+    const extraIndex = index - base.length;
+    const columns = 3;
+    const col = extraIndex % columns;
+    const row = Math.floor(extraIndex / columns);
+    positionsById.set(player.id, {
+      x: court.x + court.w * (0.24 + col * 0.26),
+      y: court.y + court.h * (0.68 + row * 0.09)
+    });
+  });
+
+  return teamPlayers.map((player) => positionsById.get(player.id));
+}
+
+function drawPlayerMarker(ctx, player, number, position) {
+  ctx.save();
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.shadowColor = "rgba(0,0,0,0.55)";
+  ctx.shadowBlur = 10;
+  ctx.shadowOffsetY = 5;
+
+  ctx.fillStyle = player.isGoalkeeper ? "#ffd166" : "#ffffff";
+  ctx.strokeStyle = player.isGoalkeeper ? "#116134" : "#1b2d43";
+  ctx.lineWidth = 5;
+  ctx.beginPath();
+  ctx.arc(position.x, position.y, 48, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.shadowColor = "transparent";
+  ctx.fillStyle = "#101715";
+  ctx.font = "900 29px Arial";
+  ctx.fillText(number, position.x, position.y - 10);
+
+  ctx.font = "900 13px Arial";
+  wrapCanvasName(ctx, player.name, position.x, position.y + 13, 76);
+
+  if (player.isGoalkeeper) {
+    ctx.fillStyle = "#14795a";
+    const labelY = position.y + 63;
+    ctx.beginPath();
+    ctx.roundRect(position.x - 30, labelY - 14, 60, 28, 8);
+    ctx.fill();
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "900 16px Arial";
+    ctx.fillText("GOL", position.x, labelY);
+  }
+
+  ctx.restore();
+}
+
+function wrapCanvasName(ctx, name, x, y, maxWidth) {
+  const parts = normalizeName(name).split(" ");
+  const first = parts[0] || "";
+  const second = parts.length > 1 ? parts[parts.length - 1] : "";
+  const lines = second && first !== second ? [first, second] : [first];
+
+  ctx.fillStyle = "#101715";
+  lines.slice(0, 2).forEach((line, index) => {
+    ctx.fillText(fitCanvasText(ctx, line, maxWidth), x, y + index * 15);
+  });
+}
+
+function fitCanvasText(ctx, text, maxWidth) {
+  let output = text;
+  while (output.length > 2 && ctx.measureText(output).width > maxWidth) {
+    output = output.slice(0, -1);
+  }
+  return output.length < text.length ? `${output.slice(0, -1)}.` : output;
+}
+
+function drawImageFooter(ctx, width, height) {
+  const grass = ctx.createLinearGradient(0, height - 92, 0, height);
+  grass.addColorStop(0, "#2e7d32");
+  grass.addColorStop(1, "#0f4e26");
+  ctx.fillStyle = grass;
+  ctx.fillRect(0, height - 92, width, 92);
+
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "700 24px Arial";
+  ctx.textAlign = "left";
+  ctx.fillText("Tira Time - futebol com equilíbrio", 46, height - 36);
+
+  ctx.font = "56px Arial";
+  ctx.textAlign = "right";
+  ctx.fillText("⚽", width - 42, height - 42);
+}
+
+function downloadTeamImage() {
+  const team = getSelectedImageTeam();
+  if (!team) return;
+  const link = document.createElement("a");
+  link.download = `${slugify(team.name)}-tira-time.png`;
+  link.href = el.teamCanvas.toDataURL("image/png");
+  link.click();
+  showToast("Imagem baixada.");
+}
+
+function shareTeamImage() {
+  const team = getSelectedImageTeam();
+  if (!team) return;
+
+  el.teamCanvas.toBlob(async (blob) => {
+    if (!blob) {
+      showToast("Não foi possível gerar a imagem.");
+      return;
+    }
+
+    const file = new File([blob], `${slugify(team.name)}-tira-time.png`, { type: "image/png" });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({
+          title: "Tira Time",
+          text: `${team.name} sorteado no Tira Time`,
+          files: [file]
+        });
+        return;
+      } catch {
+        return;
+      }
+    }
+
+    downloadTeamImage();
+    showToast("Compartilhamento nativo indisponível. A imagem foi baixada.");
+  }, "image/png");
+}
+
+function getSelectedImageTeam() {
+  if (!lastTeams) {
+    showToast("Sorteie os times antes de gerar a imagem.");
+    return null;
+  }
+  return lastTeams.teams[Number(el.imageTeamSelect.value) || 0];
 }
 
 function formatTeamsText(result) {
@@ -625,6 +916,20 @@ function escapeHtml(value) {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
+}
+
+function truncateText(text, maxLength) {
+  const value = String(text);
+  return value.length > maxLength ? `${value.slice(0, maxLength - 1)}…` : value;
+}
+
+function slugify(text) {
+  return String(text)
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
 }
 
 function showToast(message) {

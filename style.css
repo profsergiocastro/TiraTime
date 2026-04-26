@@ -1,6 +1,6 @@
 :root {
   color-scheme: light;
-  --bg: #f3f7f5;
+  --bg: #e9f2ed;
   --surface: #ffffff;
   --surface-soft: #eef6f2;
   --text: #16211d;
@@ -12,6 +12,8 @@
   --danger: #c0392b;
   --keeper: #f0a400;
   --team: #eaf6ff;
+  --pitch: #0f5f37;
+  --pitch-dark: #083b27;
   --shadow: 0 16px 40px rgba(18, 39, 31, 0.11);
 }
 
@@ -29,6 +31,8 @@
   --danger: #f06d61;
   --keeper: #ffd166;
   --team: #192c3b;
+  --pitch: #137642;
+  --pitch-dark: #071a15;
   --shadow: 0 18px 42px rgba(0, 0, 0, 0.32);
 }
 
@@ -38,10 +42,20 @@
 
 body {
   margin: 0;
-  background: var(--bg);
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.78), rgba(255, 255, 255, 0.78)),
+    repeating-linear-gradient(90deg, rgba(20, 121, 90, 0.13) 0 90px, rgba(20, 121, 90, 0.06) 90px 180px),
+    var(--bg);
   color: var(--text);
   font-family: Arial, Helvetica, sans-serif;
   line-height: 1.5;
+}
+
+[data-theme="dark"] body {
+  background:
+    linear-gradient(rgba(16, 23, 21, 0.88), rgba(16, 23, 21, 0.9)),
+    repeating-linear-gradient(90deg, rgba(67, 197, 158, 0.12) 0 90px, rgba(67, 197, 158, 0.05) 90px 180px),
+    var(--bg);
 }
 
 button,
@@ -66,19 +80,54 @@ button {
   align-items: flex-start;
   justify-content: space-between;
   gap: 16px;
-  padding: 24px 0 18px;
+  padding: 20px;
+  margin: 0 0 16px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  color: #ffffff;
+  background:
+    linear-gradient(180deg, rgba(5, 15, 13, 0.22), rgba(5, 15, 13, 0.84)),
+    radial-gradient(ellipse at top, rgba(255, 255, 255, 0.34), rgba(255, 255, 255, 0) 36%),
+    repeating-linear-gradient(90deg, rgba(16, 102, 57, 0.48) 0 110px, rgba(8, 60, 40, 0.7) 110px 220px),
+    var(--pitch-dark);
+  box-shadow: var(--shadow);
+  position: relative;
+  overflow: hidden;
+}
+
+.hero::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 5px;
+  background: linear-gradient(90deg, transparent, #65d653, transparent);
+}
+
+.brand-mark {
+  display: none;
+}
+
+.hero-copy {
+  position: relative;
+  z-index: 1;
 }
 
 .eyebrow,
-.hero p,
 .section-heading p,
 .hint {
   margin: 0;
   color: var(--muted);
 }
 
+.hero p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.88);
+}
+
 .eyebrow {
-  color: var(--primary);
+  color: #7dff7a;
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0;
@@ -113,6 +162,16 @@ main {
   border-radius: 8px;
   box-shadow: var(--shadow);
   padding: 16px;
+}
+
+.panel::before,
+.teams-section::before {
+  content: "";
+  display: block;
+  height: 4px;
+  margin: -16px -16px 14px;
+  border-radius: 8px 8px 0 0;
+  background: linear-gradient(90deg, var(--pitch), var(--keeper), var(--secondary));
 }
 
 .section-heading {
@@ -338,13 +397,26 @@ textarea {
 }
 
 .team-card {
-  background: var(--team);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.68), rgba(255, 255, 255, 0.2)),
+    var(--team);
+  overflow: hidden;
+}
+
+[data-theme="dark"] .team-card {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0)),
+    var(--team);
 }
 
 .team-header {
   border-bottom: 1px solid var(--line);
   padding-bottom: 10px;
   margin-bottom: 10px;
+}
+
+.team-header h3::before {
+  content: "⚽ ";
 }
 
 .team-player {
@@ -395,6 +467,60 @@ textarea {
   transform: translateY(0);
 }
 
+.image-dialog {
+  width: min(760px, calc(100% - 24px));
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 14px;
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--shadow);
+}
+
+.image-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.72);
+}
+
+.dialog-header,
+.dialog-actions {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.dialog-header .icon-button {
+  font-size: 1.4rem;
+  line-height: 1;
+}
+
+.team-picker {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 12px;
+  font-weight: 800;
+}
+
+.canvas-frame {
+  border: 6px solid #8a5a2b;
+  border-radius: 8px;
+  background: #8a5a2b;
+  overflow: hidden;
+}
+
+#teamCanvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  background: #0f4f85;
+}
+
+.dialog-actions {
+  margin: 14px 0 0;
+  flex-wrap: wrap;
+}
+
 .hidden {
   display: none !important;
 }
@@ -402,6 +528,30 @@ textarea {
 @media (min-width: 720px) {
   .app-shell {
     padding: 28px;
+  }
+
+  .hero {
+    align-items: center;
+    padding: 26px 28px;
+  }
+
+  .brand-mark {
+    display: grid;
+    place-items: center;
+    width: 88px;
+    height: 88px;
+    flex: 0 0 auto;
+    border: 3px solid #78e26e;
+    border-radius: 8px 8px 32px 32px;
+    background: linear-gradient(180deg, #101917, #116134);
+    box-shadow: inset 0 0 0 3px rgba(255, 255, 255, 0.14);
+    position: relative;
+    z-index: 1;
+  }
+
+  .shield {
+    font-size: 2.6rem;
+    filter: drop-shadow(0 8px 10px rgba(0, 0, 0, 0.45));
   }
 
   main {

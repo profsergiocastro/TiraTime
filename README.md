@@ -11,7 +11,8 @@ Aplicação web estática para cadastrar jogadores de futebol e sortear times eq
 - Algoritmo de equilíbrio baseado na soma das notas de cada time.
 - Indicador de equilíbrio: muito equilibrado, equilibrado ou pouco equilibrado.
 - Cards de times com jogadores, goleiros destacados, soma e média das notas.
-- Cópia do resultado e compartilhamento pelo WhatsApp ou API nativa de compartilhamento.
+- Cópia do resultado em texto.
+- Compartilhamento de cada time como imagem em uma quadra de futsal.
 - Tema claro/escuro.
 - Persistência em `localStorage`.
 - Exportação e importação de jogadores em JSON.
@@ -22,7 +23,8 @@ Aplicação web estática para cadastrar jogadores de futebol e sortear times eq
 2. Cadastre os jogadores informando nome, nota e se é goleiro.
 3. Ajuste o número de times e a quantidade de jogadores por time.
 4. Clique em **Sortear times**.
-5. Use **Copiar** ou **WhatsApp** para compartilhar o resultado.
+5. Use **Copiar** para compartilhar o resultado em texto.
+6. Use **Compartilhar imagem** para gerar uma imagem de um time em uma quadra de futsal.
 
 ## Como publicar no GitHub Pages
 

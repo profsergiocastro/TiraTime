@@ -9,8 +9,11 @@
 <body>
   <div class="app-shell">
     <header class="hero">
-      <div>
-        <p class="eyebrow">Futebol amador</p>
+      <div class="brand-mark" aria-hidden="true">
+        <span class="shield">⚽</span>
+      </div>
+      <div class="hero-copy">
+        <p class="eyebrow">Time Equilibrado</p>
         <h1>Tira Time</h1>
         <p>Monte times equilibrados em poucos segundos</p>
       </div>
@@ -130,7 +133,7 @@
           </div>
           <div class="result-actions">
             <button id="copyTeams" class="button secondary" type="button">Copiar</button>
-            <button id="shareTeams" class="button secondary" type="button">WhatsApp</button>
+            <button id="openImageShare" class="button secondary" type="button">Compartilhar imagem</button>
           </div>
         </div>
         <div id="teamsList" class="teams-list"></div>
@@ -138,6 +141,30 @@
       </section>
     </main>
   </div>
+
+  <dialog id="imageDialog" class="image-dialog">
+    <div class="dialog-header">
+      <div>
+        <h2>Compartilhar time como imagem</h2>
+        <p>Escolha um time e gere a escalação na quadra.</p>
+      </div>
+      <button id="closeImageDialog" class="icon-button" type="button" aria-label="Fechar">×</button>
+    </div>
+
+    <label class="team-picker">
+      Time
+      <select id="imageTeamSelect"></select>
+    </label>
+
+    <div class="canvas-frame">
+      <canvas id="teamCanvas" width="900" height="1200"></canvas>
+    </div>
+
+    <div class="dialog-actions">
+      <button id="downloadImage" class="button secondary" type="button">Baixar imagem</button>
+      <button id="shareImage" class="button primary" type="button">Compartilhar imagem</button>
+    </div>
+  </dialog>
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <script src="script.js"></script>
